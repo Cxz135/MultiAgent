@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能学习助手 - AI Agent 学习系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f5f7fa;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 主容器 */
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* ========== 侧边栏样式 ========== */
+        .sidebar {
+            width: 380px;
+            background: #ffffff;
+            border-right: 1px solid #e9ecef;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.02);
+        }
+
+        .sidebar-header {
+            padding: 24px 20px 16px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        /* 滚动条美化 */
+        .sidebar-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        .sidebar-content::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        /* 当前课程卡片 */
+        .current-course-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 24px 20px;
+            border-radius: 20px;
+            margin-bottom: 24px;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
+        }
+
+        .course-name-large {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            letter-spacing: 1px;
+        }
+
+        .course-actions-inline {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .btn-small {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            padding: 6px 14px;
+            border-radius: 30px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-small:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-1px);
+        }
+
+        /* 课程列表（折叠区域） */
+        .course-list-container {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+        }
+
+        .course-list {
+            list-style: none;
+            margin-top: 12px;
+        }
+
+        .course-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .course-item:hover {
+            background: #f1f3f5;
+            border-color: #dee2e6;
+        }
+
+        .course-item.active {
+            background: #eef2ff;
+            border-color: #667eea;
+        }
+
+        .course-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .course-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 4px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .btn-icon:hover {
+            background: #e9ecef;
+        }
+
+        /* 上传区域 */
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fafbfc;
+            margin-bottom: 24px;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f5f3ff;
+        }
+
+        .upload-area p {
+            font-size: 0.85rem;
+            color: #495057;
+        }
+
+        .upload-area p:first-child {
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+        .upload-area p:last-child {
+            font-size: 0.7rem;
+            color: #868e96;
+        }
+
+        .upload-area input {
+            display: none;
+        }
+
+        /* 文件列表 */
+        .section-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 20px 0 12px 0;
+            font-size: 0.9rem;
+            letter-spacing: 0.3px;
+        }
+
+        .file-list {
+            margin-bottom: 24px;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+
+        .file-item:hover {
+            background: #ffffff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        .file-info {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .file-name {
+            font-weight: 500;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            color: #1e293b;
+        }
+
+        .file-meta {
+            font-size: 0.7rem;
+            color: #6c757d;
+            line-height: 1.3;
+            margin-top: 4px;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* 生成的笔记和题目 */
+        .generated-section {
+            border-top: 1px solid #e9ecef;
+            padding-top: 16px;
+            margin-top: 8px;
+        }
+
+        .generated-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+            border-left: 3px solid #667eea;
+        }
+
+        .generated-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #4f46e5;
+            font-size: 0.8rem;
+        }
+
+        .generated-content {
+            font-size: 0.75rem;
+            line-height: 1.5;
+            color: #2d3e50;
+            word-break: break-word;
+        }
+
+        /* ========== 主聊天区样式 ========== */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: #ffffff;
+        }
+
+        .chat-header {
+            padding: 20px 28px;
+            border-bottom: 1px solid #e9ecef;
+            background: white;
+        }
+
+        .chat-header h3 {
+            font-weight: 500;
+            color: #1e293b;
+        }
+
+        .chat-header span {
+            font-weight: 600;
+            color: #4f46e5;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 28px;
+            background: #fcfcfd;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            max-width: 80%;
+            line-height: 1.6;
+            font-size: 0.9rem;
+            word-break: break-word;
+        }
+
+        .user-message {
+            margin-left: auto;
+            background: #4f46e5;
+            color: white;
+            padding: 12px 18px;
+            border-radius: 20px 20px 4px 20px;
+        }
+
+        .ai-message {
+            margin-right: auto;
+            background: #f1f5f9;
+            color: #1e293b;
+            padding: 12px 18px;
+            border-radius: 20px 20px 20px 4px;
+        }
+
+        .ai-message p,
+        .ai-message li {
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .ai-message ul,
+        .ai-message ol {
+            padding-left: 20px;
+            margin: 8px 0;
+        }
+
+        .chat-input-area {
+            padding: 20px 28px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 12px;
+        }
+
+        #user-input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid #e2e8f0;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        #user-input:focus {
+            border-color: #4f46e5;
+        }
+
+        button {
+            padding: 12px 28px;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #4338ca;
+            transform: translateY(-1px);
+        }
+
+        /* 模态框 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            width: 400px;
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 20px 35px -10px rgba(0,0,0,0.2);
+        }
+
+        .modal-content h3 {
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            margin: 16px 0;
+            font-size: 0.9rem;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>📚 智能学习助手</h2>
+        </div>
+
+        <div class="sidebar-content">
+            <!-- 当前课程卡片 -->
+            <div class="current-course-card">
+                <div class="course-name-large" id="current-course-display">{{ current_course }}</div>
+                <div class="course-actions-inline">
+                    <button class="btn-small" onclick="showAddCourseDialog()">➕ 新建课程</button>
+                    <button class="btn-small" onclick="toggleCourseList()">📋 切换课程</button>
+                </div>
+            </div>
+
+            <!-- 课程列表（折叠） -->
+            <div id="course-list-container" style="display: none;">
+                <div class="course-list-container">
+                    <div style="font-weight: 500; margin-bottom: 8px;">所有课程</div>
+                    <ul class="course-list" id="course-list"></ul>
+                </div>
+            </div>
+
+            <!-- 上传区域 -->
+            <div class="upload-area" id="upload-area">
+                <p>📤 点击或拖拽文件到此处</p>
+                <p>自动归入「{{ current_course }}」课程</p>
+                <input type="file" id="file-upload" accept=".pdf,.txt,.docx">
+            </div>
+
+            <!-- 课程资料列表 -->
+            <div class="file-list">
+                <div class="section-title">📄 课程资料</div>
+                <div id="file-list-content">加载中...</div>
+            </div>
+
+            <!-- 最近生成的笔记/题目 -->
+            <div class="generated-section">
+                <div class="section-title">📝 最近生成</div>
+                <div id="generated-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主聊天区 -->
+    <div class="main">
+        <div class="chat-header">
+            <h3>💬 与 <span id="chat-course-name">{{ current_course }}</span> 对话</h3>
+        </div>
+        <div class="chat-messages" id="chat-box"></div>
+        <div class="chat-input-area">
+            <input type="text" id="user-input" placeholder="输入你的问题...">
+            <button onclick="sendMessage()">发送</button>
+        </div>
+    </div>
+</div>
+
+<!-- 模态框（添加课程/确认） -->
+<div id="modal" class="modal-overlay">
+    <div class="modal-content">
+        <h3 id="modal-title">新建课程</h3>
+        <input type="text" id="modal-input" placeholder="课程名称">
+        <div class="modal-buttons">
+            <button id="modal-confirm-btn">确认</button>
+            <button id="modal-cancel-btn" style="background:#e2e8f0;color:#1e293b;">取消</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ========== 全局变量 ==========
+    let currentCourse = "{{ current_course }}";
+    let currentUserId = "default";
+    let currentModalCallback = null;
+
+    // ========== 辅助函数 ==========
+    function addLog(message) {
+        console.log(`[${new Date().toLocaleTimeString()}] ${message}`);
+    }
+
+    function addMessage(content, type) {
+        const chatBox = document.getElementById('chat-box');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type === 'user' ? 'user-message' : 'ai-message'}`;
+
+        if (type === 'ai') {
+            // 保留换行和格式
+            messageDiv.innerHTML = content.replace(/\n/g, '<br>');
+        } else {
+            messageDiv.textContent = content;
+        }
+        chatBox.appendChild(messageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function addGeneratedItem(title, content) {
+        const list = document.getElementById('generated-list');
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'generated-item';
+        itemDiv.innerHTML = `
+            <div class="generated-title">${title}</div>
+            <div class="generated-content">${content.substring(0, 200)}...</div>
+            <div style="margin-top: 8px; font-size: 0.65rem; color: #6c757d;">${new Date().toLocaleString()}</div>
+        `;
+        list.insertBefore(itemDiv, list.firstChild);
+        while (list.children.length > 8) list.removeChild(list.lastChild);
+    }
+
+    function showModal(title, placeholder, onConfirm) {
+        const modal = document.getElementById('modal');
+        const titleEl = document.getElementById('modal-title');
+        const inputEl = document.getElementById('modal-input');
+        titleEl.textContent = title;
+        inputEl.placeholder = placeholder || '请输入名称';
+        inputEl.value = '';
+        modal.style.display = 'flex';
+        currentModalCallback = onConfirm;
+    }
+
+    function closeModal() {
+        document.getElementById('modal').style.display = 'none';
+        currentModalCallback = null;
+    }
+
+    // ========== 课程管理 ==========
+    async function loadCourses() {
+        try {
+            const response = await fetch('/api/documents/courses');
+            const data = await response.json();
+            const courseList = document.getElementById('course-list');
+            courseList.innerHTML = '';
+            if (!data.courses || data.courses.length === 0) {
+                courseList.innerHTML = '<li style="padding: 8px; text-align: center; color: #6c757d;">暂无课程</li>';
+                return;
+            }
+            data.courses.forEach(course => {
+                const li = document.createElement('li');
+                li.className = `course-item ${course === currentCourse ? 'active' : ''}`;
+                li.innerHTML = `
+                    <span class="course-name" onclick="switchCourse('${course}')">${course}</span>
+                    <div class="course-actions">
+                        <button class="btn-icon" onclick="event.stopPropagation(); renameCourse('${course}')" title="重命名">✏️</button>
+                        <button class="btn-icon" onclick="event.stopPropagation(); deleteCourse('${course}')" title="删除">🗑️</button>
+                    </div>
+                `;
+                courseList.appendChild(li);
+            });
+        } catch (error) {
+            console.error('加载课程失败:', error);
+        }
+    }
+
+    async function switchCourse(course) {
+        if (course === currentCourse) return;
+        currentCourse = course;
+        document.getElementById('current-course-display').innerText = course;
+        document.getElementById('chat-course-name').innerText = course;
+        document.querySelectorAll('.course-item').forEach(item => {
+            item.classList.remove('active');
+            if (item.querySelector('.course-name').innerText === course) item.classList.add('active');
+        });
+        await loadFiles(course);
+        addLog(`📖 切换到课程: ${course}`);
+        document.getElementById('course-list-container').style.display = 'none';
+    }
+
+    async function loadFiles(course) {
+        try {
+            const response = await fetch(`/api/documents/list?course=${encodeURIComponent(course)}`);
+            const data = await response.json();
+            const container = document.getElementById('file-list-content');
+            if (!data.files || data.files.length === 0) {
+                container.innerHTML = '<p style="color: #868e96; text-align: center; padding: 20px;">暂无资料</p>';
+                return;
+            }
+            let html = '';
+            data.files.forEach(file => {
+                html += `
+                    <div class="file-item">
+                        <div class="file-info" onclick="previewFile('${file.name}', '${course}')">
+                            <div class="file-name">📄 ${file.name}</div>
+                            <div class="file-meta">${file.date || '未知日期'}</div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn-icon" onclick="downloadFile('${file.name}', '${course}')" title="下载">📥</button>
+                            <button class="btn-icon" onclick="deleteFile('${file.name}', '${course}')" title="删除">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        } catch (error) {
+            console.error('加载文件失败:', error);
+            document.getElementById('file-list-content').innerHTML = '<p style="color: red;">加载失败</p>';
+        }
+    }
+
+    function toggleCourseList() {
+        const container = document.getElementById('course-list-container');
+        if (container.style.display === 'none') {
+            loadCourses();
+            container.style.display = 'block';
+        } else {
+            container.style.display = 'none';
+        }
+    }
+
+    async function addCourse(name) {
+        try {
+            const response = await fetch('/api/documents/courses/add', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({course_name: name})
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                await loadCourses();
+                await switchCourse(name);
+                addLog(`✅ 已创建课程: ${name}`);
+            }
+        } catch (error) {
+            console.error('添加课程失败:', error);
+        }
+    }
+
+    async function deleteCourse(course) {
+        if (!confirm(`确定要删除课程 "${course}" 吗？所有资料将被删除。`)) return;
+        try {
+            const response = await fetch('/api/documents/courses/delete', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({course_name: course})
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                await loadCourses();
+                if (currentCourse === course) {
+                    const firstCourse = document.querySelector('.course-item .course-name');
+                    if (firstCourse) switchCourse(firstCourse.innerText);
+                }
+                addLog(`✅ 已删除课程: ${course}`);
+            }
+        } catch (error) {
+            console.error('删除课程失败:', error);
+        }
+    }
+
+    async function renameCourse(oldName) {
+        const newName = prompt('请输入新课程名称:', oldName);
+        if (!newName || newName === oldName) return;
+        try {
+            const response = await fetch('/api/documents/courses/rename', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({old_name: oldName, new_name: newName})
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                await loadCourses();
+                if (currentCourse === oldName) switchCourse(newName);
+                addLog(`✏️ 课程已重命名: ${oldName} → ${newName}`);
+            }
+        } catch (error) {
+            console.error('重命名失败:', error);
+        }
+    }
+
+    // ========== 文件操作 ==========
+    async function uploadFile(file) {
+        if (!currentCourse) return alert('请先选择课程');
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('target_course', currentCourse);
+        addLog(`📤 上传: ${file.name} → ${currentCourse}`);
+        try {
+            const response = await fetch('/api/documents/upload', { method: 'POST', body: formData });
+            const data = await response.json();
+            if (data.status === 'success') {
+                addLog(`✅ 上传成功: ${file.name}`);
+                await loadFiles(currentCourse);
+            } else {
+                alert('上传失败: ' + (data.message || '未知错误'));
+            }
+        } catch (error) {
+            console.error('上传失败:', error);
+        }
+    }
+
+    function previewFile(filename, course) {
+        window.open(`/api/documents/view?course=${encodeURIComponent(course)}&file=${encodeURIComponent(filename)}`, '_blank');
+    }
+
+    function downloadFile(filename, course) {
+        window.location.href = `/api/documents/download?course=${encodeURIComponent(course)}&file=${encodeURIComponent(filename)}`;
+    }
+
+    async function deleteFile(filename, course) {
+        if (!confirm(`确定删除文件 "${filename}" 吗？`)) return;
+        try {
+            const response = await fetch(`/api/documents/delete/${encodeURIComponent(course)}/${encodeURIComponent(filename)}`, {
+                method: 'DELETE'
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                addLog(`🗑️ 已删除: ${filename}`);
+                await loadFiles(currentCourse);
+            } else {
+                alert('删除失败');
+            }
+        } catch (error) {
+            console.error('删除失败:', error);
+        }
+    }
+
+    // ========== 聊天 ==========
+    async function sendMessage() {
+        const input = document.getElementById('user-input');
+        const query = input.value.trim();
+        if (!query) return;
+
+        addMessage(query, 'user');
+        input.value = '';
+        addLog(`📝 提问: ${query}`);
+
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    query: query,
+                    current_course: currentCourse,
+                    user_id: currentUserId
+                })
+            });
+            const data = await response.json();
+            addMessage(data.answer, 'ai');
+            if (data.intent === 'note' || data.intent === 'question_generate') {
+                addGeneratedItem(data.intent === 'note' ? '📝 笔记' : '❓ 题目', data.answer);
+            }
+            addLog(`✅ 回答完成`);
+        } catch (error) {
+            console.error('请求失败:', error);
+            addMessage('抱歉，发生了错误。', 'ai');
+        }
+    }
+
+    // ========== 事件绑定 ==========
+    document.getElementById('upload-area').addEventListener('click', () => document.getElementById('file-upload').click());
+    document.getElementById('file-upload').addEventListener('change', e => {
+        if (e.target.files[0]) uploadFile(e.target.files[0]);
+    });
+    document.getElementById('upload-area').addEventListener('dragover', e => e.preventDefault());
+    document.getElementById('upload-area').addEventListener('drop', e => {
+        e.preventDefault();
+        if (e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]);
+    });
+    document.getElementById('user-input').addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
+    document.getElementById('modal-confirm-btn').onclick = () => {
+        const val = document.getElementById('modal-input').value.trim();
+        if (val && currentModalCallback) currentModalCallback(val);
+        closeModal();
+    };
+    document.getElementById('modal-cancel-btn').onclick = closeModal;
+
+    window.showAddCourseDialog = () => showModal('新建课程', '课程名称', addCourse);
+    window.toggleCourseList = toggleCourseList;
+    window.switchCourse = switchCourse;
+    window.renameCourse = renameCourse;
+    window.deleteCourse = deleteCourse;
+    window.deleteFile = deleteFile;
+    window.previewFile = previewFile;
+    window.downloadFile = downloadFile;
+    window.sendMessage = sendMessage;
+
+    // 初始化
+    (async () => {
+        await loadFiles(currentCourse);
+        loadCourses();
+        addLog('🚀 系统已启动');
+        addLog(`📖 当前课程: ${currentCourse}`);
+    })();
+</script>
+</body>
+</html>
