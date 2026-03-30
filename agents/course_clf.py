@@ -21,7 +21,7 @@ class CourseClassifierAgent(BaseAgent):
     def update_courses(self, courses):
         self.existing_courses = courses
 
-    def process(self, state: OverallState):
+    async def process(self, state: OverallState):
         pass
 
     def detect_match(self, filename, content, target_course):

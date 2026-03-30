@@ -9,7 +9,7 @@ class CourseManager(BaseAgent):
         super().__init__(model)
         self.courses = set()
 
-    def process(self, state: OverallState):
+    async def process(self, state: OverallState):
         pass
 
     def add_course(self, filename, content):

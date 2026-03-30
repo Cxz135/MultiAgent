@@ -8,7 +8,7 @@ from typing import Dict, Any
 
 class QuestionGeneratorAgent(BaseAgent):
 
-    def process(self, state: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, state: Dict[str, Any]) -> Dict[str, Any]:
         docs = state["retrieved_docs"]
         query = state["messages"][-1].content
         formatted = self.format_docs(docs)
@@ -17,5 +17,5 @@ class QuestionGeneratorAgent(BaseAgent):
             query=query,
             course_materials=formatted,
         )
-        response = self.model.invoke(prompt)
+        response = await self.model.ainvoke(prompt)
         return {"final_output": response.content}

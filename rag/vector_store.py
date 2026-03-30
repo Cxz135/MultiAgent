@@ -1,4 +1,4 @@
-#vector_store.py
+#rag/vector_store.py
 
 
 from langchain_chroma import Chroma

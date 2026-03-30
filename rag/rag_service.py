@@ -9,21 +9,20 @@ class RetrieverService:
 
     def __init__(self):
         self.vector_store = VectorStoreService()
-        self.retriever = self.vector_store.get_retriever()
 
-    def retrieve(self, query: str, k: int = 5) -> list[Document]:
-        return self.retriever.invoke(query)
+    def get_retriever(self, course: str, user_id: str = "default"):
+        """根据课程获取检索器（延迟创建）"""
+        return self.vector_store.get_retriever(course=course, user_id=user_id)
 
-    def retrieve_formatted(self, query: str) -> str:
-        docs = self.retrieve(query)
+    def retrieve(self, query: str, course: str, user_id: str = "default", k: int = 5) -> list[Document]:
+        """检索文档，需要传入课程"""
+        retriever = self.get_retriever(course, user_id)
+        return retriever.invoke(query)
 
-        formatted = []
-        for i, doc in enumerate(docs, 1):
-            formatted.append(
-                f"[{i}] {doc.page_content}\n来源: {doc.metadata.get('source')}\n"
-            )
-
-        return "\n".join(formatted)
+    def retrieve_formatted(self, query: str, course: str, user_id: str = "default") -> str:
+        """检索并格式化，需要传入课程"""
+        docs = self.retrieve(query, course, user_id)
+        return self.format_docs(docs)
 
     def format_docs(self, docs) -> str:
         """直接格式化已有的docs"""

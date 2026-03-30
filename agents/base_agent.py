@@ -13,7 +13,7 @@ class BaseAgent(ABC):
         self.config = prompts_config
 
     @abstractmethod
-    def process(self, state: OverallState) -> dict:
+    async def process(self, state: OverallState) -> dict:
         pass
 
     def get_prompt(self, **kwargs) -> str:

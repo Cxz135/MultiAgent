@@ -18,7 +18,7 @@ load_dotenv()
 redis_client = None
 
 # 自定义缓存函数
-def cached_llm_call(llm, prompt):
+'''def cached_llm_call(llm, prompt):
     key = cache.generate_key(prompt)
     cached = cache.get(key)
     if cached:
@@ -28,12 +28,15 @@ def cached_llm_call(llm, prompt):
     print(f"缓存未命中: {prompt[:30]}...")
     result = llm.invoke(prompt)
     cache.set(key, result)
-    return result
+    return result'''
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global redis_client
     os.makedirs("data/uploads", exist_ok=True)
+    os.environ["LANGCHAIN_TRACING_V2"] = "true"
+    os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGSMITH_API_KEY", "")
+    os.environ["LANGCHAIN_PROJECT"] = os.getenv("LANGSMITH_PROJECT", "learning-assistant")
 
     try:
         redis_client = redis.Redis.from_url(
@@ -44,27 +47,38 @@ async def lifespan(app: FastAPI):
         )
         redis_client.ping()
         logger.info("✅ Redis 连接成功")
-        cache.set_client(redis_client)
 
+        # 设置缓存客户端
+        cache.set_client(redis_client)  # 现在有这个方法了
+
+        # 测试缓存
         test_key = cache.generate_key("test")
-        cache.set(test_key, "test_value")
+        cache.set(test_key, {"test": "value"})  # 精确缓存测试
         test_value = cache.get(test_key)
-        if test_value == "test_value":
-            print("✅ 缓存测试成功")
+        if test_value:
+            logger.info("✅ 精确缓存测试成功")
         else:
-            print("⚠️ 缓存测试失败")
+            logger.warning("⚠️ 精确缓存测试失败")
+
+        # 测试语义缓存
+        cache.set("这是一个测试问题", {"answer": "测试答案"}, "test_course", "qa")
+        semantic_result = cache.get("这是一个测试问题", "test_course", "qa")
+        if semantic_result:
+            logger.info("✅ 语义缓存测试成功")
+        else:
+            logger.warning("⚠️ 语义缓存测试失败")
 
     except Exception as e:
         print(f"⚠️ Redis 连接失败，将不使用缓存: {e}")
         cache.set_client(None)
 
-    print("🚀 应用启动完成")
+    logger.info("🚀 应用启动完成")
     yield
 
-    print("🛑 应用关闭中...")
+    logger.info("🛑 应用关闭中...")
     if redis_client:
         redis_client.close()
-        print("✅ Redis 连接已关闭")
+        logger.info("✅ Redis 连接已关闭")
 
 
 app = FastAPI(title="智能学习助手", lifespan=lifespan)
